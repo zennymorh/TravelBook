@@ -11,6 +11,9 @@ import com.google.android.gms.maps.model.LatLng
 import kotlinx.android.synthetic.main.activity_main.*
 import java.lang.Exception
 
+var namesArray = ArrayList<String>()
+var locationArray = ArrayList<LatLng>()
+
 class MainActivity : AppCompatActivity() {
 
     private val addressAdapter: AddressAdapter by lazy{
@@ -31,9 +34,6 @@ class MainActivity : AppCompatActivity() {
 
         }
     }
-
-    var namesArray = ArrayList<String>()
-    var locationArray = ArrayList<LatLng>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

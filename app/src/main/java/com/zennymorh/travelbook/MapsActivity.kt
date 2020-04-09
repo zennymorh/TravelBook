@@ -24,8 +24,8 @@ import java.util.*
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
-    private var locationManager : LocationManager? = null
-    private var locationListener : LocationListener? = null
+    private lateinit var locationManager : LocationManager
+    private lateinit var locationListener : LocationListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,7 +58,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     mMap.clear()
                     val userLocation = LatLng(location.latitude, location.longitude)
                     mMap.addMarker(MarkerOptions().position(userLocation).title("Your Location"))
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 17f))
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15f))
                 }
             }
 
@@ -79,15 +79,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             ActivityCompat.requestPermissions(this,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
         } else {
-            locationManager!!.requestLocationUpdates(LocationManager
+            locationManager.requestLocationUpdates(LocationManager
                 .GPS_PROVIDER, 2, 2f, locationListener)
 
             val intent = intent
             val info = intent.getStringExtra("info")
             if (info == "new"){
-                val lastLocation = locationManager!!.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                val userLastLocation = LatLng(lastLocation.latitude, lastLocation.longitude)
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLastLocation, 17f))
+                mMap.clear()
+                val lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                if (lastLocation != null) {
+                    val lastUserLocation = LatLng(lastLocation.latitude, lastLocation.longitude)
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lastUserLocation, 15f))
+                }
+
 
             }else {
                 mMap.clear()
@@ -97,7 +101,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 val location = LatLng(latitude, longitude)
 
                 mMap.addMarker(MarkerOptions().position(location).title(name))
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 17f))
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
 
                 Toast.makeText(applicationContext, location.toString(), Toast.LENGTH_SHORT).show()
 
@@ -105,15 +109,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    val myListener = object : GoogleMap.OnMapLongClickListener {
-        override fun onMapLongClick(p0: LatLng?) {
-            mMap.clear()
+    private val myListener = GoogleMap.OnMapLongClickListener { p0 ->
+        mMap.clear()
 
-            val geocoder = Geocoder(applicationContext, Locale.getDefault())
-            var address = ""
+        val geocoder = Geocoder(applicationContext, Locale.getDefault())
+        var address = ""
 
+        if (p0 != null) {
             try {
-                val addressList = geocoder.getFromLocation(p0!!.latitude, p0.longitude, 1)
+                val addressList = geocoder.getFromLocation(p0.latitude, p0.longitude, 1)
 
                 if (addressList != null && addressList.size > 0) {
                     if (addressList[0].thoroughfare != null) {
@@ -131,7 +135,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 e.printStackTrace()
             }
 
-            mMap.addMarker(MarkerOptions().position(p0!!).title(address))
+            mMap.clear()
+
+            mMap.addMarker(MarkerOptions().position(p0).title(address))
+
+            namesArray.add(address)
+            locationArray.add(p0)
 
             Toast.makeText(applicationContext, "New Place Created", Toast.LENGTH_SHORT).show()
 
@@ -143,7 +152,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 database.execSQL("CREATE TABLE IF NOT EXISTS places (name VARCHAR, latitude VARCHAR, longitude VARCHAR)")
 
-                val toCompile = "INSERT INTO places (name, latitude, longitude) VALUES (?, ?, ?)"
+                val toCompile =
+                    "INSERT INTO places (name, latitude, longitude) VALUES (?, ?, ?)"
 
                 val sqLiteStatement = database.compileStatement(toCompile)
 
@@ -172,11 +182,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                             Manifest.permission.ACCESS_FINE_LOCATION
                         ) != PackageManager.PERMISSION_GRANTED
                     ) {
-                        locationManager!!.requestLocationUpdates(
+                        locationManager.requestLocationUpdates(
                             LocationManager.GPS_PROVIDER,
                             2,
                             2f,
-                            locationListener!!
+                            locationListener
                         )
                     }
                 }
