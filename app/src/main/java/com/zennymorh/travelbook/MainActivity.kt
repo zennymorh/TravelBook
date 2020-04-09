@@ -1,17 +1,89 @@
 package com.zennymorh.travelbook
 
+import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import androidx.recyclerview.widget.LinearLayoutManager
+import android.widget.Toast
+import com.google.android.gms.maps.model.LatLng
 import kotlinx.android.synthetic.main.activity_main.*
+import java.lang.Exception
 
 class MainActivity : AppCompatActivity() {
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    private val addressAdapter: AddressAdapter by lazy{
+        AddressAdapter(namesArray, locationArray, onItemSelected)
+    }
 
+    private val onItemSelected by lazy {
+        object: ItemClickListener {
+            override fun invoke(selectedPlace: String, selectedLatLng: LatLng) {
+                val intent = Intent(applicationContext, MapsActivity::class.java)
+                intent.putExtra("info", "old")
+                intent.putExtra("name", selectedPlace)
+                intent.putExtra("latitude", selectedLatLng.latitude)
+                intent.putExtra("longitude", selectedLatLng.longitude)
+                Toast.makeText(applicationContext, selectedLatLng.latitude.toString(), Toast.LENGTH_SHORT).show()
+                startActivity(intent)
+            }
+
+        }
+    }
+
+    var namesArray = ArrayList<String>()
+    var locationArray = ArrayList<LatLng>()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        locationList.adapter = addressAdapter
+    }
+
+    override fun onResume() {
+        super.onResume()
+        try {
+            val database = openOrCreateDatabase("places", Context.MODE_PRIVATE, null)
+            val cursor = database.rawQuery("SELECT * FROM places", null)
+
+            val nameIndex = cursor.getColumnIndex("name")
+            val latitudeIndex = cursor.getColumnIndex("latitude")
+            val longitudeIndex = cursor.getColumnIndex("longitude")
+
+            cursor.moveToFirst()
+
+            namesArray.clear()
+            locationArray.clear()
+
+            while (cursor != null) {
+                val nameFromDatabase = cursor.getString(nameIndex)
+                val latitudeFromDatabase = cursor.getString(latitudeIndex)
+                val longitudeFromDatabase = cursor.getString(longitudeIndex)
+
+                namesArray.add(nameFromDatabase)
+
+                val latitudeCoordinates = latitudeFromDatabase.toDouble()
+                val longitudeCoordinates = longitudeFromDatabase.toDouble()
+
+                val location = LatLng(latitudeCoordinates, longitudeCoordinates)
+
+                locationArray.add(location)
+
+                cursor.moveToNext()
+            }
+
+            cursor?.close()
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        addressAdapter.updateList(namesArray, locationArray)
+
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         val menuInflater = menuInflater
         menuInflater.inflate(R.menu.add_place, menu)
 
@@ -28,13 +100,6 @@ class MainActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    private lateinit var linearLayoutManager: LinearLayoutManager
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
-        linearLayoutManager = LinearLayoutManager(this)
-        locationList.layoutManager = linearLayoutManager
-    }
 }

@@ -12,7 +12,6 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -25,8 +24,8 @@ import java.util.*
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
-    var locationManager : LocationManager? = null
-    var locationListener : LocationListener? = null
+    private var locationManager : LocationManager? = null
+    private var locationListener : LocationListener? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,22 +84,26 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
             val intent = intent
             val info = intent.getStringExtra("info")
-            if (info.equals("new")){
-                mMap.clear()
-                val lastLocation = locationManager?.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                val userLastLocation = LatLng(lastLocation!!.latitude, lastLocation!!.longitude)
-                mMap.addMarker(MarkerOptions().position(userLastLocation).title("Your location"))
+            if (info == "new"){
+                val lastLocation = locationManager!!.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                val userLastLocation = LatLng(lastLocation.latitude, lastLocation.longitude)
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLastLocation, 17f))
-            } else {
-                //
+
+            }else {
+                mMap.clear()
+                val latitude = intent.getDoubleExtra("latitude", 0.0)
+                val longitude = intent.getDoubleExtra("longitude", 0.0)
+                val name = intent.getStringExtra("name")
+                val location = LatLng(latitude, longitude)
+
+                mMap.addMarker(MarkerOptions().position(location).title(name))
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 17f))
+
+                Toast.makeText(applicationContext, location.toString(), Toast.LENGTH_SHORT).show()
+
             }
-
-
-
         }
-
     }
-
 
     val myListener = object : GoogleMap.OnMapLongClickListener {
         override fun onMapLongClick(p0: LatLng?) {
@@ -131,21 +134,53 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             mMap.addMarker(MarkerOptions().position(p0!!).title(address))
 
             Toast.makeText(applicationContext, "New Place Created", Toast.LENGTH_SHORT).show()
-        }
-    }
-    
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        if (requestCode == 1) {
-            if (grantResults.isNotEmpty()) {
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    locationManager!!.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2, 2f, locationListener)
-                }
+
+            try {
+                val latitude = p0.latitude.toString()
+                val longitude = p0.longitude.toString()
+
+                val database = openOrCreateDatabase("places", Context.MODE_PRIVATE, null)
+
+                database.execSQL("CREATE TABLE IF NOT EXISTS places (name VARCHAR, latitude VARCHAR, longitude VARCHAR)")
+
+                val toCompile = "INSERT INTO places (name, latitude, longitude) VALUES (?, ?, ?)"
+
+                val sqLiteStatement = database.compileStatement(toCompile)
+
+                sqLiteStatement.bindString(1, address)
+                sqLiteStatement.bindString(2, latitude)
+                sqLiteStatement.bindString(3, longitude)
+
+                sqLiteStatement.execute()
+
+
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
+
+        override fun onRequestPermissionsResult(
+            requestCode: Int,
+            permissions: Array<out String>,
+            grantResults: IntArray
+        ) {
+            if (requestCode == 1) {
+                if (grantResults.isNotEmpty()) {
+                    if (ContextCompat.checkSelfPermission(
+                            this,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        locationManager!!.requestLocationUpdates(
+                            LocationManager.GPS_PROVIDER,
+                            2,
+                            2f,
+                            locationListener!!
+                        )
+                    }
+                }
+            }
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        }
 }
