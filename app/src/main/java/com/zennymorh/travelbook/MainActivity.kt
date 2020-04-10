@@ -6,7 +6,8 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Toast
+import android.view.View
+import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.android.synthetic.main.activity_main.*
 import java.lang.Exception
@@ -28,7 +29,6 @@ class MainActivity : AppCompatActivity() {
                 intent.putExtra("name", selectedPlace)
                 intent.putExtra("latitude", selectedLatLng.latitude)
                 intent.putExtra("longitude", selectedLatLng.longitude)
-                Toast.makeText(applicationContext, selectedLatLng.latitude.toString(), Toast.LENGTH_SHORT).show()
                 startActivity(intent)
             }
 
@@ -38,6 +38,17 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        locationList.addItemDecoration(
+            DividerItemDecoration(applicationContext,
+                DividerItemDecoration.VERTICAL)
+        )
+
+        button.setOnClickListener {
+            val intent = Intent(applicationContext, MapsActivity::class.java)
+            intent.putExtra("info", "new")
+            startActivity(intent)
+        }
 
         locationList.adapter = addressAdapter
     }
@@ -78,6 +89,12 @@ class MainActivity : AppCompatActivity() {
 
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+
+        if (namesArray.isEmpty()) {
+            add_layout.visibility = View.VISIBLE
+        } else {
+            add_layout.visibility = View.GONE
         }
         addressAdapter.updateList(namesArray, locationArray)
 

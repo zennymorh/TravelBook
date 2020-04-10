@@ -2,4 +2,6 @@
     <string name="app_name">TravelBook</string>
     <string name="menu_title">Add Place</string>
     <string name="title_activity_maps">Map</string>
+    <string name="placeholder_text">Hey there, Click on the option menu</string>
+    <string name="add_new_location">Add new Location</string>
 </resources>

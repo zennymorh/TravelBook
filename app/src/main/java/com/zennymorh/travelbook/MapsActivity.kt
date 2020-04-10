@@ -54,11 +54,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         locationListener = object : LocationListener {
             override fun onLocationChanged(location: Location?) {
-                if (location != null) {
-                    mMap.clear()
-                    val userLocation = LatLng(location.latitude, location.longitude)
-                    mMap.addMarker(MarkerOptions().position(userLocation).title("Your Location"))
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15f))
+                val info = intent.getStringExtra("info")
+                if (info == "new") {
+                    if (location != null) {
+                        mMap.clear()
+                        val userLocation = LatLng(location.latitude, location.longitude)
+                        mMap.addMarker(MarkerOptions().position(userLocation).title("Your Location"))
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15f))
+                    }
                 }
             }
 
@@ -86,12 +89,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             val info = intent.getStringExtra("info")
             if (info == "new"){
                 mMap.clear()
-                val lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                if (lastLocation != null) {
+                    val lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
                     val lastUserLocation = LatLng(lastLocation.latitude, lastLocation.longitude)
+                    mMap.addMarker(MarkerOptions().position(lastUserLocation).title("Your Location"))
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lastUserLocation, 15f))
-                }
-
 
             }else {
                 mMap.clear()
@@ -102,8 +103,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 mMap.addMarker(MarkerOptions().position(location).title(name))
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
-
-                Toast.makeText(applicationContext, location.toString(), Toast.LENGTH_SHORT).show()
 
             }
         }
@@ -126,6 +125,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                         if (addressList[0].subThoroughfare != null) {
                             address += addressList[0].subThoroughfare
                         }
+                    } else {
+                        address = "Unnamed Street"
                     }
                 } else {
                     address = "New Place"
