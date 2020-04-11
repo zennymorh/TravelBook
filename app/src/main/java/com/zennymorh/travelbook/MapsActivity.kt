@@ -26,6 +26,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private lateinit var locationManager : LocationManager
     private lateinit var locationListener : LocationListener
+    private var isFirstTime: Boolean = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,13 +55,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         locationListener = object : LocationListener {
             override fun onLocationChanged(location: Location?) {
+                val intent = intent
                 val info = intent.getStringExtra("info")
                 if (info == "new") {
                     if (location != null) {
                         mMap.clear()
                         val userLocation = LatLng(location.latitude, location.longitude)
                         mMap.addMarker(MarkerOptions().position(userLocation).title("Your Location"))
-                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15f))
+                        if (isFirstTime) {
+                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15f))
+                            isFirstTime = false
+                        }
                     }
                 }
             }
@@ -89,10 +94,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             val info = intent.getStringExtra("info")
             if (info == "new"){
                 mMap.clear()
-                    val lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                val lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                if (lastLocation != null) {
                     val lastUserLocation = LatLng(lastLocation.latitude, lastLocation.longitude)
-                    mMap.addMarker(MarkerOptions().position(lastUserLocation).title("Your Location"))
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lastUserLocation, 15f))
+                }
 
             }else {
                 mMap.clear()
